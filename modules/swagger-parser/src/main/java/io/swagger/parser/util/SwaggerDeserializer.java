@@ -8,6 +8,8 @@ import io.swagger.models.parameters.*;
 import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.PropertyBuilder;
+import io.swagger.models.properties.RefProperty;
+import io.swagger.models.utils.PropertyModelConverter;
 import io.swagger.util.Json;
 
 import java.math.BigDecimal;
@@ -1101,8 +1103,24 @@ public class SwaggerDeserializer {
                 }
             }
         }
+        // work-around for https://github.com/swagger-api/swagger-core/issues/1977
+        if(node.get("$ref") != null && node.get("$ref").isTextual()) {
+            // check if it's a relative ref
+            String mungedRef = mungedRef(node.get("$ref").textValue());
+            if(mungedRef != null) {
+                node.put("$ref", mungedRef);
+            }
+        }
 
-        return Json.mapper().convertValue(node, Property.class);
+        JsonNode allOf = node.get("allOf");
+        if(allOf != null && allOf.isArray()) {
+            Model model = allOfModel(node, location, result);
+            Model composedModel = Json.mapper().convertValue(model, Model.class);
+            PropertyModelConverter converter = new PropertyModelConverter();
+            return converter.modelToProperty(composedModel);
+        } else {
+            return Json.mapper().convertValue(node, Property.class);
+        }
     }
 
     public String inferTypeFromArray(ArrayNode an) {
