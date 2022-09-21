@@ -1103,14 +1103,6 @@ public class SwaggerDeserializer {
                 }
             }
         }
-        // work-around for https://github.com/swagger-api/swagger-core/issues/1977
-        if(node.get("$ref") != null && node.get("$ref").isTextual()) {
-            // check if it's a relative ref
-            String mungedRef = mungedRef(node.get("$ref").textValue());
-            if(mungedRef != null) {
-                node.put("$ref", mungedRef);
-            }
-        }
 
         JsonNode allOf = node.get("allOf");
         if(allOf != null && allOf.isArray()) {
